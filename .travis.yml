@@ -1,0 +1,24 @@
+language: generic
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t kevintruong/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  # the -- --coverage force the test to exit with the coverage at the end of the test
+  - docker run -e CI=true kevintruong/react-test npm run test -- --coverage
+
+after_success:
+  - docker build -t kevintruong/multi-client ./client
+  - docker build -t kevintruong/multi-nginx ./nginx
+  - docker build -t kevintruong/multi-server ./server
+  - docker build -t kevintruong/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # push built images to docker hub
+  - docker push kevintruong/multi-client
+  - docker push kevintruong/multi-nginx
+  - docker push kevintruong/multi-server
+  - docker push kevintruong/multi-worker
